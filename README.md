@@ -19,11 +19,12 @@ Simulasi ESP32 mengirim suhu dan kelembaban lewat MQTT ke Node-RED. Node-RED men
        methods: "GET,PUT,POST,DELETE,OPTIONS",
        allowedHeaders: "Content-Type,X-API-Key"
    },
-3. Jalankan Node-RED dengan API key: `API_KEY=rahasia123 node-red` (tanpa env, default `iot-secret-123`).
-4. Hapus tab flow lama, lalu Import `flows.json` dan Deploy.
-5. Samakan `API_KEY` di `dashboard/index.html` dengan key di langkah 3.
-6. Jalankan broker MQTT (mosquitto), lalu `python simulator/simulasi_esp32.py`.
-7. Buka `dashboard/index.html` di browser.
+   - Batas suhu disimpan di memori Node-RED, sehingga kembali ke 30 °C saat Node-RED di-restart.
+4. Jalankan Node-RED dengan API key: `API_KEY=rahasia123 node-red` (tanpa env, default `iot-secret-123`).
+5. Hapus tab flow lama, lalu Import `flows.json` dan Deploy.
+6. Samakan `API_KEY` di `dashboard/index.html` dengan key di langkah 3.
+7. Jalankan broker MQTT (mosquitto), lalu `python simulator/simulasi_esp32.py`.
+8. Buka `dashboard/index.html` di browser.
 
 ## Endpoint
 | Method | Path | Keterangan |
