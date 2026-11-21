@@ -1,332 +1,10 @@
 [
     {
-        "id": "882bf06b9cf31c35",
-        "type": "tab",
-        "label": "Flow 1",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "flow_api",
-        "type": "tab",
-        "label": "IoT API",
-        "disabled": false,
-        "info": ""
-    },
-    {
         "id": "tab1",
         "type": "tab",
         "label": "IoT REST API + WebSocket",
         "disabled": false,
         "info": ""
-    },
-    {
-        "id": "mqtt_broker_config",
-        "type": "mqtt-broker",
-        "name": "Local Mosquitto",
-        "broker": "localhost",
-        "port": "1883",
-        "clientid": "node-red-backend",
-        "autoConnect": true,
-        "usetls": false,
-        "protocolVersion": "4",
-        "keepalive": "60",
-        "cleansession": true
-    },
-    {
-        "id": "broker",
-        "type": "mqtt-broker",
-        "name": "Local",
-        "broker": "localhost",
-        "port": "1883",
-        "clientid": "",
-        "autoConnect": true,
-        "usetls": false,
-        "protocolVersion": "4",
-        "keepalive": "60",
-        "cleansession": true
-    },
-    {
-        "id": "db1",
-        "type": "sqlitedb",
-        "db": "iot.sqlite",
-        "mode": "RWC"
-    },
-    {
-        "id": "ws1",
-        "type": "websocket-listener",
-        "path": "/ws",
-        "wholemsg": "false"
-    },
-    {
-        "id": "mqtt_sensor_in",
-        "type": "mqtt in",
-        "z": "flow_api",
-        "name": "Subscribe Sensor",
-        "topic": "iot/sensor",
-        "qos": "0",
-        "datatype": "json",
-        "broker": "mqtt_broker_config",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 170,
-        "y": 100,
-        "wires": [
-            [
-                "store_sensor"
-            ]
-        ]
-    },
-    {
-        "id": "store_sensor",
-        "type": "function",
-        "z": "flow_api",
-        "name": "Simpan Data Sensor",
-        "func": "// Simpan data terakhir ke flow context\nvar data = msg.payload;\ndata.received = new Date().toISOString();\nflow.set('lastSensor', data);\n\n// Simpan history (maksimal 50 data)\nvar history = flow.get('history') || [];\nhistory.push(data);\nif (history.length > 50) history.shift();\nflow.set('history', history);\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 410,
-        "y": 100,
-        "wires": [
-            [
-                "debug_sensor"
-            ]
-        ]
-    },
-    {
-        "id": "debug_sensor",
-        "type": "debug",
-        "z": "flow_api",
-        "name": "Log Sensor",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 620,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "http_get_suhu",
-        "type": "http in",
-        "z": "flow_api",
-        "name": "GET /api/suhu",
-        "url": "/api/suhu",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 170,
-        "y": 200,
-        "wires": [
-            [
-                "resp_suhu"
-            ]
-        ]
-    },
-    {
-        "id": "resp_suhu",
-        "type": "function",
-        "z": "flow_api",
-        "name": "Build Response Suhu",
-        "func": "var data = flow.get('lastSensor') || {suhu: null, kelembaban: null, timestamp: null};\nmsg.payload = {\n    status: 'success',\n    data: data,\n    server_time: new Date().toISOString()\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 410,
-        "y": 200,
-        "wires": [
-            [
-                "http_resp_suhu"
-            ]
-        ]
-    },
-    {
-        "id": "http_resp_suhu",
-        "type": "http response",
-        "z": "flow_api",
-        "name": "",
-        "statusCode": "200",
-        "headers": {},
-        "x": 640,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "http_get_history",
-        "type": "http in",
-        "z": "flow_api",
-        "name": "GET /api/history",
-        "url": "/api/history",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 180,
-        "y": 280,
-        "wires": [
-            [
-                "resp_history"
-            ]
-        ]
-    },
-    {
-        "id": "resp_history",
-        "type": "function",
-        "z": "flow_api",
-        "name": "Build Response History",
-        "func": "var history = flow.get('history') || [];\nmsg.payload = {\n    status: 'success',\n    count: history.length,\n    data: history\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 410,
-        "y": 280,
-        "wires": [
-            [
-                "http_resp_history"
-            ]
-        ]
-    },
-    {
-        "id": "http_resp_history",
-        "type": "http response",
-        "z": "flow_api",
-        "name": "",
-        "statusCode": "200",
-        "headers": {},
-        "x": 640,
-        "y": 280,
-        "wires": []
-    },
-    {
-        "id": "http_post_kontrol",
-        "type": "http in",
-        "z": "flow_api",
-        "name": "POST /api/kontrol",
-        "url": "/api/kontrol",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 180,
-        "y": 380,
-        "wires": [
-            [
-                "proc_kontrol"
-            ]
-        ]
-    },
-    {
-        "id": "proc_kontrol",
-        "type": "function",
-        "z": "flow_api",
-        "name": "Validasi & Publish",
-        "func": "var body = msg.payload;\n\n// Validasi input\nif (!body || !body.device || !body.action) {\n    msg.statusCode = 400;\n    msg.payload = {status: 'error', message: 'device dan action wajib diisi'};\n    msg.headers = {'Access-Control-Allow-Origin': '*'};\n    return [msg, null];\n}\n\n// Output 2: publish ke MQTT\nvar mqttMsg = {payload: body, topic: 'iot/kontrol'};\n\n// Output 1: respon HTTP\nmsg.statusCode = 200;\nmsg.payload = {\n    status: 'success',\n    message: 'Perintah terkirim',\n    sent: body\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn [msg, mqttMsg];",
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 400,
-        "y": 380,
-        "wires": [
-            [
-                "http_resp_kontrol"
-            ],
-            [
-                "mqtt_publish_kontrol"
-            ]
-        ]
-    },
-    {
-        "id": "http_resp_kontrol",
-        "type": "http response",
-        "z": "flow_api",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 630,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "mqtt_publish_kontrol",
-        "type": "mqtt out",
-        "z": "flow_api",
-        "name": "Publish Kontrol",
-        "topic": "",
-        "qos": "0",
-        "retain": "false",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "mqtt_broker_config",
-        "x": 640,
-        "y": 410,
-        "wires": []
-    },
-    {
-        "id": "http_cors",
-        "type": "http in",
-        "z": "flow_api",
-        "name": "OPTIONS CORS",
-        "url": "/api/*",
-        "method": "options",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 180,
-        "y": 480,
-        "wires": [
-            [
-                "cors_resp"
-            ]
-        ]
-    },
-    {
-        "id": "cors_resp",
-        "type": "function",
-        "z": "flow_api",
-        "name": "CORS Headers",
-        "func": "msg.statusCode = 204;\nmsg.payload = '';\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type'\n};\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 400,
-        "y": 480,
-        "wires": [
-            [
-                "cors_http_resp"
-            ]
-        ]
-    },
-    {
-        "id": "cors_http_resp",
-        "type": "http response",
-        "z": "flow_api",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 620,
-        "y": 480,
-        "wires": []
     },
     {
         "id": "resp",
@@ -720,44 +398,32 @@
         ]
     },
     {
-        "id": "hopt",
-        "type": "http in",
-        "z": "tab1",
-        "name": "OPTIONS CORS",
-        "url": "/api/*",
-        "method": "options",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 130,
-        "y": 760,
-        "wires": [
-            [
-                "fcors"
-            ]
-        ]
+        "id": "db1",
+        "type": "sqlitedb",
+        "db": "iot.sqlite",
+        "mode": "RWC"
     },
     {
-        "id": "fcors",
-        "type": "function",
-        "z": "tab1",
-        "name": "CORS Headers",
-        "func": "msg.statusCode = 204;\nmsg.headers = {\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Headers\":\"Content-Type, X-API-Key\",\"Access-Control-Allow-Methods\":\"GET, POST, PUT, OPTIONS\"};\nmsg.payload = \"\";\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 760,
-        "wires": [
-            [
-                "resp"
-            ]
-        ]
+        "id": "broker",
+        "type": "mqtt-broker",
+        "name": "Local",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true
     },
     {
-        "id": "6215b5645544bc50",
+        "id": "ws1",
+        "type": "websocket-listener",
+        "path": "/ws",
+        "wholemsg": "false"
+    },
+    {
+        "id": "28a776a29fb342b9",
         "type": "global-config",
         "env": [],
         "modules": {
