@@ -13,10 +13,12 @@ Simulasi ESP32 mengirim suhu dan kelembaban lewat MQTT ke Node-RED. Node-RED men
 
 ## Instalasi
 1. Palet Node-RED: instal `node-red-node-sqlite`.
-2. Di `~/.node-red/settings.js` aktifkan penyimpanan context ke file (agar batas suhu tidak hilang saat restart):
-   ```js
-   contextStorage: { default: { module: "memory" }, file: { module: "localfilesystem" } },
-   ```
+2. Di `~/.node-red/settings.js` aktifkan CORS agar dashboard bisa memanggil API:
+   httpNodeCors: {
+       origin: "*",
+       methods: "GET,PUT,POST,DELETE,OPTIONS",
+       allowedHeaders: "Content-Type,X-API-Key"
+   },
 3. Jalankan Node-RED dengan API key: `API_KEY=rahasia123 node-red` (tanpa env, default `iot-secret-123`).
 4. Hapus tab flow lama, lalu Import `flows.json` dan Deploy.
 5. Samakan `API_KEY` di `dashboard/index.html` dengan key di langkah 3.
