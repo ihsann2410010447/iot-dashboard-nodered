@@ -1,0 +1,767 @@
+[
+    {
+        "id": "882bf06b9cf31c35",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "flow_api",
+        "type": "tab",
+        "label": "IoT API",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "tab1",
+        "type": "tab",
+        "label": "IoT REST API + WebSocket",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "mqtt_broker_config",
+        "type": "mqtt-broker",
+        "name": "Local Mosquitto",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "node-red-backend",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true
+    },
+    {
+        "id": "broker",
+        "type": "mqtt-broker",
+        "name": "Local",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true
+    },
+    {
+        "id": "db1",
+        "type": "sqlitedb",
+        "db": "iot.sqlite",
+        "mode": "RWC"
+    },
+    {
+        "id": "ws1",
+        "type": "websocket-listener",
+        "path": "/ws",
+        "wholemsg": "false"
+    },
+    {
+        "id": "mqtt_sensor_in",
+        "type": "mqtt in",
+        "z": "flow_api",
+        "name": "Subscribe Sensor",
+        "topic": "iot/sensor",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 170,
+        "y": 100,
+        "wires": [
+            [
+                "store_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "store_sensor",
+        "type": "function",
+        "z": "flow_api",
+        "name": "Simpan Data Sensor",
+        "func": "// Simpan data terakhir ke flow context\nvar data = msg.payload;\ndata.received = new Date().toISOString();\nflow.set('lastSensor', data);\n\n// Simpan history (maksimal 50 data)\nvar history = flow.get('history') || [];\nhistory.push(data);\nif (history.length > 50) history.shift();\nflow.set('history', history);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 100,
+        "wires": [
+            [
+                "debug_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "debug_sensor",
+        "type": "debug",
+        "z": "flow_api",
+        "name": "Log Sensor",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 620,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "http_get_suhu",
+        "type": "http in",
+        "z": "flow_api",
+        "name": "GET /api/suhu",
+        "url": "/api/suhu",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 200,
+        "wires": [
+            [
+                "resp_suhu"
+            ]
+        ]
+    },
+    {
+        "id": "resp_suhu",
+        "type": "function",
+        "z": "flow_api",
+        "name": "Build Response Suhu",
+        "func": "var data = flow.get('lastSensor') || {suhu: null, kelembaban: null, timestamp: null};\nmsg.payload = {\n    status: 'success',\n    data: data,\n    server_time: new Date().toISOString()\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 200,
+        "wires": [
+            [
+                "http_resp_suhu"
+            ]
+        ]
+    },
+    {
+        "id": "http_resp_suhu",
+        "type": "http response",
+        "z": "flow_api",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 640,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "http_get_history",
+        "type": "http in",
+        "z": "flow_api",
+        "name": "GET /api/history",
+        "url": "/api/history",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 280,
+        "wires": [
+            [
+                "resp_history"
+            ]
+        ]
+    },
+    {
+        "id": "resp_history",
+        "type": "function",
+        "z": "flow_api",
+        "name": "Build Response History",
+        "func": "var history = flow.get('history') || [];\nmsg.payload = {\n    status: 'success',\n    count: history.length,\n    data: history\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 280,
+        "wires": [
+            [
+                "http_resp_history"
+            ]
+        ]
+    },
+    {
+        "id": "http_resp_history",
+        "type": "http response",
+        "z": "flow_api",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 640,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "http_post_kontrol",
+        "type": "http in",
+        "z": "flow_api",
+        "name": "POST /api/kontrol",
+        "url": "/api/kontrol",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 380,
+        "wires": [
+            [
+                "proc_kontrol"
+            ]
+        ]
+    },
+    {
+        "id": "proc_kontrol",
+        "type": "function",
+        "z": "flow_api",
+        "name": "Validasi & Publish",
+        "func": "var body = msg.payload;\n\n// Validasi input\nif (!body || !body.device || !body.action) {\n    msg.statusCode = 400;\n    msg.payload = {status: 'error', message: 'device dan action wajib diisi'};\n    msg.headers = {'Access-Control-Allow-Origin': '*'};\n    return [msg, null];\n}\n\n// Output 2: publish ke MQTT\nvar mqttMsg = {payload: body, topic: 'iot/kontrol'};\n\n// Output 1: respon HTTP\nmsg.statusCode = 200;\nmsg.payload = {\n    status: 'success',\n    message: 'Perintah terkirim',\n    sent: body\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn [msg, mqttMsg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 380,
+        "wires": [
+            [
+                "http_resp_kontrol"
+            ],
+            [
+                "mqtt_publish_kontrol"
+            ]
+        ]
+    },
+    {
+        "id": "http_resp_kontrol",
+        "type": "http response",
+        "z": "flow_api",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 630,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "mqtt_publish_kontrol",
+        "type": "mqtt out",
+        "z": "flow_api",
+        "name": "Publish Kontrol",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 640,
+        "y": 410,
+        "wires": []
+    },
+    {
+        "id": "http_cors",
+        "type": "http in",
+        "z": "flow_api",
+        "name": "OPTIONS CORS",
+        "url": "/api/*",
+        "method": "options",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 480,
+        "wires": [
+            [
+                "cors_resp"
+            ]
+        ]
+    },
+    {
+        "id": "cors_resp",
+        "type": "function",
+        "z": "flow_api",
+        "name": "CORS Headers",
+        "func": "msg.statusCode = 204;\nmsg.payload = '';\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 480,
+        "wires": [
+            [
+                "cors_http_resp"
+            ]
+        ]
+    },
+    {
+        "id": "cors_http_resp",
+        "type": "http response",
+        "z": "flow_api",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 620,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "resp",
+        "type": "http response",
+        "z": "tab1",
+        "name": "http response",
+        "statusCode": "",
+        "headers": {},
+        "x": 1000,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "init",
+        "type": "inject",
+        "z": "tab1",
+        "name": "Init DB",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 40,
+        "wires": [
+            [
+                "dbcreate"
+            ]
+        ]
+    },
+    {
+        "id": "dbcreate",
+        "type": "sqlite",
+        "z": "tab1",
+        "mydb": "db1",
+        "sqlquery": "fixed",
+        "sql": "CREATE TABLE IF NOT EXISTS readings (id INTEGER PRIMARY KEY AUTOINCREMENT, suhu REAL, kelembaban REAL, received TEXT);",
+        "name": "Create table",
+        "x": 300,
+        "y": 40,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "mqin",
+        "type": "mqtt in",
+        "z": "tab1",
+        "name": "Subscribe Sensor",
+        "topic": "iot/sensor",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 130,
+        "y": 120,
+        "wires": [
+            [
+                "fsimpan"
+            ]
+        ]
+    },
+    {
+        "id": "fsimpan",
+        "type": "function",
+        "z": "tab1",
+        "name": "Simpan Data Sensor",
+        "func": "const d = msg.payload;\nconst rec = {suhu:Number(d.suhu), kelembaban:Number(d.kelembaban), received:new Date().toISOString()};\nflow.set(\"latest\", rec);\nlet th = global.get(\"threshold\"); if (th === undefined || th === null) th = 30;\n\nconst toDb = {params:{$suhu:rec.suhu, $hum:rec.kelembaban, $received:rec.received}};\nconst toWs = {payload:{type:\"sensor\", suhu:rec.suhu, kelembaban:rec.kelembaban, received:rec.received, threshold:th}};\nlet alert = null;\nif (rec.suhu > th && Date.now() - (flow.get(\"lastAlert\")||0) > 30000) {   // cooldown 30 dtk\n  flow.set(\"lastAlert\", Date.now());\n  alert = {payload:{type:\"alert\", message:`Suhu ${rec.suhu}°C melewati batas ${th}°C`, suhu:rec.suhu, threshold:th, received:rec.received}};\n}\nreturn [toDb, toWs, alert];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 120,
+        "wires": [
+            [
+                "dbins"
+            ],
+            [
+                "wsout",
+                "dbg"
+            ],
+            [
+                "wsout",
+                "mqalert",
+                "dbgalert"
+            ]
+        ]
+    },
+    {
+        "id": "dbins",
+        "type": "sqlite",
+        "z": "tab1",
+        "mydb": "db1",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO readings(suhu,kelembaban,received) VALUES ($suhu,$hum,$received)",
+        "name": "INSERT readings",
+        "x": 570,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "wsout",
+        "type": "websocket out",
+        "z": "tab1",
+        "name": "WebSocket /ws",
+        "server": "ws1",
+        "client": "",
+        "x": 580,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "dbg",
+        "type": "debug",
+        "z": "tab1",
+        "name": "Log Sensor",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 570,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "mqalert",
+        "type": "mqtt out",
+        "z": "tab1",
+        "name": "Publish Alert",
+        "topic": "iot/alert",
+        "qos": "0",
+        "retain": "false",
+        "broker": "broker",
+        "x": 580,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "dbgalert",
+        "type": "debug",
+        "z": "tab1",
+        "name": "Log Alert",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 570,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "hsuhu",
+        "type": "http in",
+        "z": "tab1",
+        "name": "GET /api/suhu",
+        "url": "/api/suhu",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 360,
+        "wires": [
+            [
+                "fsuhu"
+            ]
+        ]
+    },
+    {
+        "id": "fsuhu",
+        "type": "function",
+        "z": "tab1",
+        "name": "Build Response Suhu",
+        "func": "const H = {\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Headers\":\"Content-Type, X-API-Key\",\"Access-Control-Allow-Methods\":\"GET, POST, PUT, OPTIONS\"};\nconst KEY = env.get(\"API_KEY\") || \"iot-secret-123\";\nmsg.headers = H;\nconst authed = msg.req.headers[\"x-api-key\"] === KEY;\nif (!authed) { msg.statusCode = 401; msg.payload = {status:\"error\", message:\"Unauthorized: header X-API-Key salah atau tidak ada\"}; }\nif (!authed) return msg;\nconst l = flow.get(\"latest\");\nmsg.statusCode = 200;\nmsg.payload = {status:\"success\", data: l ? {suhu:l.suhu, kelembaban:l.kelembaban, received:l.received} : {suhu:null, kelembaban:null}};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 360,
+        "wires": [
+            [
+                "resp"
+            ]
+        ]
+    },
+    {
+        "id": "hhist",
+        "type": "http in",
+        "z": "tab1",
+        "name": "GET /api/history",
+        "url": "/api/history",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 440,
+        "wires": [
+            [
+                "fhistq"
+            ]
+        ]
+    },
+    {
+        "id": "fhistq",
+        "type": "function",
+        "z": "tab1",
+        "name": "Query History",
+        "func": "const H = {\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Headers\":\"Content-Type, X-API-Key\",\"Access-Control-Allow-Methods\":\"GET, POST, PUT, OPTIONS\"};\nconst KEY = env.get(\"API_KEY\") || \"iot-secret-123\";\nmsg.headers = H;\nconst authed = msg.req.headers[\"x-api-key\"] === KEY;\nif (!authed) { msg.statusCode = 401; msg.payload = {status:\"error\", message:\"Unauthorized: header X-API-Key salah atau tidak ada\"}; }\nif (!authed) return [null, msg];\nconst n = Math.min(Math.max(parseInt(msg.req.query.n) || 50, 1), 500);\nmsg.params = {$n:n};\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 440,
+        "wires": [
+            [
+                "dbsel"
+            ],
+            [
+                "resp"
+            ]
+        ]
+    },
+    {
+        "id": "dbsel",
+        "type": "sqlite",
+        "z": "tab1",
+        "mydb": "db1",
+        "sqlquery": "prepared",
+        "sql": "SELECT suhu,kelembaban,received FROM readings ORDER BY id DESC LIMIT $n",
+        "name": "SELECT history",
+        "x": 560,
+        "y": 440,
+        "wires": [
+            [
+                "fhistr"
+            ]
+        ]
+    },
+    {
+        "id": "fhistr",
+        "type": "function",
+        "z": "tab1",
+        "name": "Build Response History",
+        "func": "msg.headers = {\"Access-Control-Allow-Origin\":\"*\"};\nmsg.statusCode = 200;\nmsg.payload = {status:\"success\", data: msg.payload.reverse()};   // urut lama -> baru\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 440,
+        "wires": [
+            [
+                "resp"
+            ]
+        ]
+    },
+    {
+        "id": "hkon",
+        "type": "http in",
+        "z": "tab1",
+        "name": "POST /api/kontrol",
+        "url": "/api/kontrol",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 530,
+        "wires": [
+            [
+                "fkon"
+            ]
+        ]
+    },
+    {
+        "id": "fkon",
+        "type": "function",
+        "z": "tab1",
+        "name": "Validasi & Publish",
+        "func": "const H = {\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Headers\":\"Content-Type, X-API-Key\",\"Access-Control-Allow-Methods\":\"GET, POST, PUT, OPTIONS\"};\nconst KEY = env.get(\"API_KEY\") || \"iot-secret-123\";\nmsg.headers = H;\nconst authed = msg.req.headers[\"x-api-key\"] === KEY;\nif (!authed) { msg.statusCode = 401; msg.payload = {status:\"error\", message:\"Unauthorized: header X-API-Key salah atau tidak ada\"}; }\nif (!authed) return [msg, null];\nconst b = msg.payload || {};\nif (b.device !== \"lamp\" || ![\"on\",\"off\"].includes(b.action)) {\n  msg.statusCode = 400;\n  msg.payload = {status:\"error\", message:\"device harus 'lamp' dan action 'on'/'off'\"};\n  return [msg, null];\n}\nmsg.statusCode = 200;\nconst out = {payload:{device:b.device, action:b.action}};\nmsg.payload = {status:\"success\", message:`${b.device} -> ${b.action}`};\nreturn [msg, out];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 530,
+        "wires": [
+            [
+                "resp"
+            ],
+            [
+                "mqkon"
+            ]
+        ]
+    },
+    {
+        "id": "mqkon",
+        "type": "mqtt out",
+        "z": "tab1",
+        "name": "Publish Kontrol",
+        "topic": "iot/kontrol",
+        "qos": "0",
+        "retain": "false",
+        "broker": "broker",
+        "x": 580,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "hthg",
+        "type": "http in",
+        "z": "tab1",
+        "name": "GET /api/threshold",
+        "url": "/api/threshold",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 630,
+        "wires": [
+            [
+                "fth"
+            ]
+        ]
+    },
+    {
+        "id": "hthp",
+        "type": "http in",
+        "z": "tab1",
+        "name": "PUT /api/threshold",
+        "url": "/api/threshold",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 680,
+        "wires": [
+            [
+                "fth"
+            ]
+        ]
+    },
+    {
+        "id": "fth",
+        "type": "function",
+        "z": "tab1",
+        "name": "Threshold",
+        "func": "const H = {\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Headers\":\"Content-Type, X-API-Key\",\"Access-Control-Allow-Methods\":\"GET, POST, PUT, OPTIONS\"};\nconst KEY = env.get(\"API_KEY\") || \"iot-secret-123\";\nmsg.headers = H;\nconst authed = msg.req.headers[\"x-api-key\"] === KEY;\nif (!authed) { msg.statusCode = 401; msg.payload = {status:\"error\", message:\"Unauthorized: header X-API-Key salah atau tidak ada\"}; }\nif (!authed) return [msg, null];\nlet th = global.get(\"threshold\"); if (th === undefined || th === null) th = 30;\nif (msg.req.method === \"PUT\") {\n  const raw = msg.payload ? msg.payload.threshold : undefined;\n  const v = Number(raw);\n  if (raw === undefined || raw === null || raw === \"\" || !Number.isFinite(v)) {\n    msg.statusCode = 400;\n    msg.payload = {status:\"error\", message:\"threshold harus berupa angka\"};\n    return [msg, null];\n  }\n  global.set(\"threshold\", v);\n  flow.set(\"lastAlert\", 0);\n  msg.statusCode = 200;\n  msg.payload = {status:\"success\", data:{threshold:v}};\n  return [msg, {payload:{type:\"threshold\", threshold:v}}];\n}\nmsg.statusCode = 200;\nmsg.payload = {status:\"success\", data:{threshold:th}};\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 655,
+        "wires": [
+            [
+                "resp"
+            ],
+            [
+                "wsout"
+            ]
+        ]
+    },
+    {
+        "id": "hopt",
+        "type": "http in",
+        "z": "tab1",
+        "name": "OPTIONS CORS",
+        "url": "/api/*",
+        "method": "options",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 760,
+        "wires": [
+            [
+                "fcors"
+            ]
+        ]
+    },
+    {
+        "id": "fcors",
+        "type": "function",
+        "z": "tab1",
+        "name": "CORS Headers",
+        "func": "msg.statusCode = 204;\nmsg.headers = {\"Access-Control-Allow-Origin\":\"*\",\"Access-Control-Allow-Headers\":\"Content-Type, X-API-Key\",\"Access-Control-Allow-Methods\":\"GET, POST, PUT, OPTIONS\"};\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 760,
+        "wires": [
+            [
+                "resp"
+            ]
+        ]
+    },
+    {
+        "id": "6215b5645544bc50",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-sqlite": "2.0.1"
+        }
+    }
+]
